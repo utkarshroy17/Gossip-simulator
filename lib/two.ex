@@ -1,17 +1,3 @@
-
-
-
-
-# [numNodes, topology, algorithm] = System.argv()
-# {numNodes, ""} = Integer.parse(numNodes)
-
-# numNodes = 5
-# topology = "line"
-# algorithm = "gossip"
-
-
-
-#============================================================================================================
 defmodule TWO do
   use GenServer
 
