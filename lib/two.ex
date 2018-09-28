@@ -58,7 +58,7 @@ defmodule TWO do
   end
 
   def startRumour(server, rumour) do
-    GenServer.call(server, {:startRumour, {rumour}})  
+    GenServer.cast(server, {:startRumour, {rumour}})  
   end
 
   ## Server Callbacks
@@ -100,31 +100,27 @@ defmodule TWO do
     Participant.receiveRumour(state.participants[1], rumour)
   end
 
-  def handle_call(arg1, _from, state) do
-    {method, methodArgs} = arg1
-    case method do
-      :generateParticipants -> 
-        {numNodes, topology, algorithm} = methodArgs
-        newState = generateParticipants1(numNodes, topology, algorithm)
-        {:reply, :ok, newState}
-      :startRumour -> 
-        {rumour} = methodArgs
-        startRumour1(rumour, state)
-        {:reply, :ok, state}
-    end
+  def handle_call({:generateParticipants, methodArgs}, _from, state) do
+    {numNodes, topology, algorithm} = methodArgs
+    newState = generateParticipants1(numNodes, topology, algorithm)
+    {:reply, :ok, newState}
   end
 
-  # def handle_call({:lookup, name}, _from, names) do
-  #   {:reply, Map.fetch(names, name), names}
-  # end
+  def handle_cast({:startRumour, methodArgs}, state) do
+    {rumour} = methodArgs
+    startRumour1(rumour, state)
+    {:noreply, state}
+  end
 
 end
 
+
 defmodule Sample do
+
   def start(numNodes, topology, algorithm) do
     {:ok, registry_pid} = TWO.start_link([])
     TWO.generateParticipants(registry_pid, numNodes, topology, algorithm)
     TWO.startRumour(registry_pid, "Hello World")
   end
+  
 end
-

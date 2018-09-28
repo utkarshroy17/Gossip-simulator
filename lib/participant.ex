@@ -6,20 +6,20 @@ defmodule Participant do
   end
 
   def learnNeighbours(participant, neighbours) do
-    GenServer.call(participant, {:learnNeighbours, {neighbours}})
+    GenServer.cast(participant, {:learnNeighbours, {neighbours}})
   end
 
   def inspect(participant) do
-    GenServer.call(participant, {:inspect, {}})
+    GenServer.call(participant, {:inspect})
   end
 
   def receiveRumour(participant, rumour) do
-    GenServer.call(participant, {:receiveRumour, {rumour}})
+    GenServer.cast(participant, {:receiveRumour, {rumour}})
   end
 
-  def sendRumour(participant, rumour) do
-    GenServer.call(participant, {:sendRumour, {rumour}})
-  end
+  # def sendRumour(participant, rumour) do
+  #   GenServer.cast(participant, {:sendRumour, {rumour}})
+  # end
 
   #Server APIs
   def init(:ok) do
@@ -32,48 +32,56 @@ defmodule Participant do
     }}
   end
 
-
   def handleReceiveRumour(rumour, state) do
-    cond do
-      state.rumour.text == rumour -> put_in state.rumour.count, state.rumour.count + 1
+    newState = cond do
+      state.rumour.text == rumour -> 
+        IO.inspect state.rumour.count
+        put_in state.rumour.count, state.rumour.count + 1
       state.rumour.text == nil -> put_in state.rumour, %{:text => rumour, :count => 1} 
       true -> raise "Invalid rumour"
     end
-  end
-
-  def handleSendRumour(state) do
     cond do
-      state.rumour.count < 10 ->
-        numNeighbours = tuple_size state.neighbours
+      newState.rumour.count < 10 ->
+        numNeighbours = tuple_size newState.neighbours
         if(numNeighbours == 0) do raise "No neighbours" end
-        randomNeighbour = elem(state.neighbours, :rand.uniform(numNeighbours)-1)
+        randomNeighbour = elem(newState.neighbours, :rand.uniform(numNeighbours)-1)
         IO.write "Sending rumour to"; IO.inspect randomNeighbour
-        receiveRumour(randomNeighbour, state.rumour.text)
+        receiveRumour(randomNeighbour, newState.rumour.text)
       true -> IO.puts("finish")
         #Terminate program
     end
+    newState
   end
 
-  def handle_call(arg1, _from, state) do
+  # def handleSendRumour(state) do
+  #   cond do
+  #     state.rumour.count < 10 ->
+  #       numNeighbours = tuple_size state.neighbours
+  #       if(numNeighbours == 0) do raise "No neighbours" end
+  #       randomNeighbour = elem(state.neighbours, :rand.uniform(numNeighbours)-1)
+  #       IO.write "Sending rumour to"; IO.inspect randomNeighbour
+  #       receiveRumour(randomNeighbour, state.rumour.text)
+  #     true -> IO.puts("finish")
+  #       #Terminate program
+  #   end
+  # end
+
+  def handle_cast(arg1, state) do
     {method, methodArgs} = arg1
-    # IO.write "from"; IO.inspect _from
     case method do
       :learnNeighbours -> 
         {neighbours} = methodArgs
         newState = put_in state.neighbours, neighbours
-        {:reply, :ok, newState}
-      :inspect -> 
-        {:reply, state, state}
+        {:noreply, newState}
       :receiveRumour ->
         {rumour} = methodArgs
         newState = handleReceiveRumour(rumour, state)
-        {pid, ref} = _from
-        sendRumour(pid, rumour)
-        {:reply, :ok, newState}
-      :sendRumour ->
-        {rumour} = methodArgs
-        newState = handleSendRumour(state)
-        {:reply, :ok, state}
+        # sendRumour(pid, rumour)
+        {:noreply, newState}
+      # :sendRumour ->
+      #   {rumour} = methodArgs
+      #   newState = handleSendRumour(state)
+      #   {:noreply, state}
     end
   end
 
