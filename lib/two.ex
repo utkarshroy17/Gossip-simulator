@@ -21,7 +21,7 @@ defmodule TWO do
   def generateParticipants1(numNodes, topology, algorithm) do
     # IO.puts("Generating Participants..")
     participants =
-      0..numNodes-1
+      0..(numNodes - 1)
       |> Enum.map(fn index ->
         {:ok, pid} = Participant.start_link([])
         {index, pid}
@@ -41,6 +41,7 @@ defmodule TWO do
       end
 
     IO.inspect(neighbours)
+
     neighbours
     |> Enum.map(fn {pid, neighbours} -> Participant.learnNeighbours(pid, neighbours) end)
 

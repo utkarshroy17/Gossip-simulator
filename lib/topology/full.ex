@@ -5,7 +5,7 @@ defmodule Full do
     neighbors = []
 
     set_full = fn j ->
-      neighbors = neighbors ++ Map.get(actor_index, j-1)
+      neighbors = neighbors ++ Map.get(actor_index, j - 1)
     end
 
     neighbors = Enum.map(1..x, set_full)
@@ -14,7 +14,8 @@ defmodule Full do
   end
 
   def findNeighbours(participants) do
-    IO.inspect participants
+    IO.inspect(participants)
+
     for a <- participants,
         id = elem(a, 1),
         data = get_full_neighbor(participants, a),

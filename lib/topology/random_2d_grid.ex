@@ -1,19 +1,34 @@
 defmodule Random2DGrid do
+  def get_2D_neighbor(actor_index, a) do
+    x = Float.ceil(:math.sqrt(Map.size(actor_index)))
+    x = Kernel.trunc(x)
+    y = elem(a, 0)
+
+    neighbors =
+      cond do
+        rem(y, x) == 0 ->
+          [Map.get(actor_index, y + 1)]
+
+        rem(y, x) == x - 1 ->
+          [Map.get(actor_index, y - 1)]
+
+        true ->
+          [Map.get(actor_index, y + 1)] ++ [Map.get(actor_index, y - 1)]
+      end
+
+    neighbors = neighbors ++ [Map.get(actor_index, y + x)] ++ [Map.get(actor_index, y - x)]
+    List.to_tuple(MyList.delete_all(neighbors, nil))
+  end
+
   def findNeighbours(participants) do
-    participants
-    |> Enum.map(fn {index, pid} ->
-      nodeNeighbours =
-        if(participants[index - 1] != nil) do
-          {participants[index - 1]}
-        end || {}
+    pid = participants |> Map.to_list() |> Enum.map(fn {k, v} -> v end)
 
-      nodeNeighbours =
-        if(participants[index + 1] != nil) do
-          Tuple.append(nodeNeighbours, participants[index + 1])
-        end || nodeNeighbours
+    actor_index =
+      Stream.with_index(Enum.shuffle(pid), 0)
+      |> Enum.reduce(%{}, fn {v, k}, acc -> Map.put(acc, k, v) end)
 
-      {pid, nodeNeighbours}
-    end)
-    |> Map.new()
+    for a <- actor_index, id = elem(a, 1), data = get_2D_neighbor(actor_index, a), into: %{} do
+      {id, data}
+    end
   end
 end
