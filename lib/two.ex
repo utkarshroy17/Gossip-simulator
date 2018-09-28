@@ -30,21 +30,15 @@ defmodule TWO do
 
     # IO.inspect(participants)
     neighbours =
-      participants
-      |> Enum.map(fn {index, pid} ->
-        nodeNeighbours =
-          if(participants[index - 1] != nil) do
-            {participants[index - 1]}
-          end || {}
-
-        nodeNeighbours =
-          if(participants[index + 1] != nil) do
-            Tuple.append(nodeNeighbours, participants[index + 1])
-          end || nodeNeighbours
-
-        {pid, nodeNeighbours}
-      end)
-      |> Map.new()
+      case topology do
+        "line" -> Line.findNeighbours(participants)
+        "full" -> Full.findNeighbours(participants)
+        "3D" -> ThreeDGrid.findNeighbours(participants)
+        "rand2D" -> Random2DGrid.findNeighbours(participants)
+        "sphere" -> Sphere.findNeighbours(participants)
+        "imp2D" -> ImperfectLine.findNeighbours(participants)
+        _ -> raise("Invalid Topology")
+      end
 
     # IO.inspect(neighbours)
     neighbours
