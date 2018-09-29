@@ -27,7 +27,7 @@ defmodule TWO do
     participants =
       0..(numNodes - 1)
       |> Enum.map(fn index ->
-        {:ok, pid} = Participant.start_link(index+1)
+        {:ok, pid} = Participant.start_link(index + 1)
         {index, pid}
       end)
       |> Map.new()
@@ -60,7 +60,7 @@ defmodule TWO do
   end
 
   def startSW1(state) do
-    Participant.receiveSW(state.participants[0], 0, 0)  
+    Participant.receiveSW(state.participants[0], 0, 0)
   end
 
   def handle_call({:generateParticipants, methodArgs}, _, _) do
@@ -71,22 +71,23 @@ defmodule TWO do
 
   def handle_cast({method, methodArgs}, state) do
     case method do
-      :startRumour -> 
+      :startRumour ->
         {rumour} = methodArgs
         startRumour1(rumour, state)
         {:noreply, state}
+
       :startSW ->
         startSW1(state)
         {:noreply, state}
     end
   end
-
 end
 
 defmodule Sample do
   def start(numNodes, topology, algorithm) do
     {:ok, registry_pid} = TWO.start_link([])
     TWO.generateParticipants(registry_pid, numNodes, topology, algorithm)
+
     case algorithm do
       "gossip" -> TWO.startRumour(registry_pid, "Hello World")
       "push-sum" -> TWO.startSW(registry_pid)

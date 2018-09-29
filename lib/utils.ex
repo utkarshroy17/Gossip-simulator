@@ -39,14 +39,17 @@ end
 
 defmodule FourQueue do
   def new() do
-    [0,0,0,0]
+    [0, 0, 0, 0]
   end
+
   def push(queue, element) do
-    tl(queue)++[element]
+    tl(queue) ++ [element]
   end
+
   def diff(queue) do
     diff = List.first(queue) - List.last(queue)
-    cond  do
+
+    cond do
       diff < 0 -> -1 * diff
       true -> diff
     end

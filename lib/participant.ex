@@ -18,7 +18,7 @@ defmodule Participant do
   end
 
   def receiveSW(participant, s, w) do
-    GenServer.cast(participant, {:receiveSW, {s,w}})  
+    GenServer.cast(participant, {:receiveSW, {s, w}})
   end
 
   # Server APIs
@@ -31,19 +31,18 @@ defmodule Participant do
          :count => 0
        },
        :sw => %{
-        :s => count,
-        :w => 1,
-        :ratios => FourQueue.new()
+         :s => count,
+         :w => 1,
+         :ratios => FourQueue.new()
        }
      }}
   end
 
   def handleReceiveRumour(rumour, state) do
-    IO.write("handleReceiveRumour"); IO.inspect(state)
+    # IO.write("handleReceiveRumour"); IO.inspect(state)
     newState =
       cond do
         state.rumour.text == rumour ->
-          IO.inspect(state.rumour.count)
           put_in(state.rumour.count, state.rumour.count + 1)
 
         state.rumour.text == nil ->
@@ -52,6 +51,8 @@ defmodule Participant do
         true ->
           raise "Invalid rumour"
       end
+
+    IO.inspect(newState.rumour.count)
 
     cond do
       newState.rumour.count < 10 ->
@@ -74,26 +75,34 @@ defmodule Participant do
   end
 
   def handleReceiveSW(s, w, state) do
-    IO.write "handleReceiveSW #{s}, #{w}, "; IO.inspect state
-    newS = (state.sw.s + s)/2
-    newW = (state.sw.w + w)/2
-    newRatios = FourQueue.push(state.sw.ratios, newS/newW)
-    newState = put_in(state.sw, %{
-      :s => newS,
-      :w => newW,
-      :ratios => newRatios
-    })
-    if (FourQueue.diff(newState.sw.ratios) < :math.pow(10,-10)) do
+    # IO.write("handleReceiveSW #{s}, #{w}, "); IO.inspect(state)
+    newS = (state.sw.s + s) / 2
+    newW = (state.sw.w + w) / 2
+    newRatios = FourQueue.push(state.sw.ratios, newS / newW)
+
+    newState =
+      put_in(state.sw, %{
+        :s => newS,
+        :w => newW,
+        :ratios => newRatios
+      })
+
+    diff = FourQueue.diff(newState.sw.ratios)
+    IO.puts diff
+    if diff < :math.pow(10, -10) do
       IO.puts("finish")
     else
       numNeighbours = tuple_size(newState.neighbours)
+
       if(numNeighbours == 0) do
         raise "No neighbours"
       end
+
       randomNeighbour = elem(newState.neighbours, :rand.uniform(numNeighbours) - 1)
       IO.write("Sending SW to"); IO.inspect(randomNeighbour)
       receiveSW(randomNeighbour, newState.sw.s, newState.sw.w)
     end
+
     newState
   end
 

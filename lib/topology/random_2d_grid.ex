@@ -23,6 +23,11 @@ defmodule Random2DGrid do
   def findNeighbours(participants) do
     pid = participants |> Map.to_list() |> Enum.map(fn {k, v} -> v end)
 
+    n = Enum.count(pid)
+    x = Kernel.trunc(Float.ceil(:math.sqrt(n)))
+    x = x * x
+    pid = pid ++ List.duplicate(nil, x - n)
+
     actor_index =
       Stream.with_index(Enum.shuffle(pid), 0)
       |> Enum.reduce(%{}, fn {v, k}, acc -> Map.put(acc, k, v) end)
