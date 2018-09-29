@@ -35,8 +35,8 @@ defmodule TWO do
         "full" -> Full.findNeighbours(participants)
         "3D" -> ThreeDGrid.findNeighbours(participants)
         "rand2D" -> Random2DGrid.findNeighbours(participants)
-        "sphere" -> Sphere.findNeighbours(participants)
-        "imp2D" -> ImperfectLine.findNeighbours(participants)
+        "torus" -> Sphere.findNeighbours(participants)
+        "impLine" -> ImperfectLine.findNeighbours(participants)
         _ -> raise("Invalid Topology")
       end
 
