@@ -13,17 +13,21 @@ defmodule TWO do
     GenServer.cast(server, {:startRumour, {rumour}})
   end
 
+  def startSW(server) do
+    GenServer.cast(server, {:startSW, {}})
+  end
+
   ## Server Callbacks
   def init(:ok) do
     {:ok, %{}}
   end
 
-  def generateParticipants1(numNodes, topology, algorithm) do
+  def generateParticipants1(numNodes, topology, _) do
     # IO.puts("Generating Participants..")
     participants =
       0..(numNodes - 1)
       |> Enum.map(fn index ->
-        {:ok, pid} = Participant.start_link([])
+        {:ok, pid} = Participant.start_link(index+1)
         {index, pid}
       end)
       |> Map.new()
@@ -52,26 +56,40 @@ defmodule TWO do
 
   def startRumour1(rumour, state) do
     # IO.write "startRumour1"; IO.inspect(state)
-    Participant.receiveRumour(state.participants[1], rumour)
+    Participant.receiveRumour(state.participants[0], rumour)
   end
 
-  def handle_call({:generateParticipants, methodArgs}, _from, state) do
+  def startSW1(state) do
+    Participant.receiveSW(state.participants[0], 0, 0)  
+  end
+
+  def handle_call({:generateParticipants, methodArgs}, _, _) do
     {numNodes, topology, algorithm} = methodArgs
     newState = generateParticipants1(numNodes, topology, algorithm)
     {:reply, :ok, newState}
   end
 
-  def handle_cast({:startRumour, methodArgs}, state) do
-    {rumour} = methodArgs
-    startRumour1(rumour, state)
-    {:noreply, state}
+  def handle_cast({method, methodArgs}, state) do
+    case method do
+      :startRumour -> 
+        {rumour} = methodArgs
+        startRumour1(rumour, state)
+        {:noreply, state}
+      :startSW ->
+        startSW1(state)
+        {:noreply, state}
+    end
   end
+
 end
 
 defmodule Sample do
   def start(numNodes, topology, algorithm) do
     {:ok, registry_pid} = TWO.start_link([])
     TWO.generateParticipants(registry_pid, numNodes, topology, algorithm)
-    TWO.startRumour(registry_pid, "Hello World")
+    case algorithm do
+      "gossip" -> TWO.startRumour(registry_pid, "Hello World")
+      "push-sum" -> TWO.startSW(registry_pid)
+    end
   end
 end

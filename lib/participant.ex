@@ -1,8 +1,8 @@
 defmodule Participant do
   use GenServer
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, :ok, opts)
+  def start_link(count) do
+    GenServer.start_link(__MODULE__, count, [])
   end
 
   def learnNeighbours(participant, neighbours) do
@@ -17,19 +17,29 @@ defmodule Participant do
     GenServer.cast(participant, {:receiveRumour, {rumour}})
   end
 
+  def receiveSW(participant, s, w) do
+    GenServer.cast(participant, {:receiveSW, {s,w}})  
+  end
+
   # Server APIs
-  def init(:ok) do
+  def init(count) do
     {:ok,
      %{
        :neighbours => {},
        :rumour => %{
          :text => nil,
          :count => 0
+       },
+       :sw => %{
+        :s => count,
+        :w => 1,
+        :ratios => FourQueue.new()
        }
      }}
   end
 
   def handleReceiveRumour(rumour, state) do
+    IO.write("handleReceiveRumour"); IO.inspect(state)
     newState =
       cond do
         state.rumour.text == rumour ->
@@ -52,8 +62,7 @@ defmodule Participant do
         end
 
         randomNeighbour = elem(newState.neighbours, :rand.uniform(numNeighbours) - 1)
-        IO.write("Sending rumour to")
-        IO.inspect(randomNeighbour)
+        IO.write("Sending rumour to"); IO.inspect(randomNeighbour)
         receiveRumour(randomNeighbour, newState.rumour.text)
 
       true ->
@@ -61,6 +70,30 @@ defmodule Participant do
         # Terminate program
     end
 
+    newState
+  end
+
+  def handleReceiveSW(s, w, state) do
+    IO.write "handleReceiveSW #{s}, #{w}, "; IO.inspect state
+    newS = (state.sw.s + s)/2
+    newW = (state.sw.w + w)/2
+    newRatios = FourQueue.push(state.sw.ratios, newS/newW)
+    newState = put_in(state.sw, %{
+      :s => newS,
+      :w => newW,
+      :ratios => newRatios
+    })
+    if (FourQueue.diff(newState.sw.ratios) < :math.pow(10,-10)) do
+      IO.puts("finish")
+    else
+      numNeighbours = tuple_size(newState.neighbours)
+      if(numNeighbours == 0) do
+        raise "No neighbours"
+      end
+      randomNeighbour = elem(newState.neighbours, :rand.uniform(numNeighbours) - 1)
+      IO.write("Sending SW to"); IO.inspect(randomNeighbour)
+      receiveSW(randomNeighbour, newState.sw.s, newState.sw.w)
+    end
     newState
   end
 
@@ -76,6 +109,11 @@ defmodule Participant do
       :receiveRumour ->
         {rumour} = methodArgs
         newState = handleReceiveRumour(rumour, state)
+        {:noreply, newState}
+
+      :receiveSW ->
+        {s, w} = methodArgs
+        newState = handleReceiveSW(s, w, state)
         {:noreply, newState}
     end
   end
