@@ -14,8 +14,6 @@ defmodule Full do
   end
 
   def findNeighbours(participants) do
-    IO.inspect(participants)
-
     for a <- participants,
         id = elem(a, 1),
         data = get_full_neighbor(participants, a),

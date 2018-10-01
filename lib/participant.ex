@@ -25,7 +25,10 @@ defmodule Participant do
   def init(count) do
     {:ok,
      %{
+       :index => count,
        :neighbours => {},
+       :is_transmitting => false,
+       :has_converged => false,
        :rumour => %{
          :text => nil,
          :count => 0
@@ -39,69 +42,64 @@ defmodule Participant do
   end
 
   def handleReceiveRumour(rumour, state) do
-    # IO.write("handleReceiveRumour"); IO.inspect(state)
     newState =
       cond do
         state.rumour.text == rumour ->
           put_in(state.rumour.count, state.rumour.count + 1)
-
         state.rumour.text == nil ->
-          put_in(state.rumour, %{:text => rumour, :count => 1})
-
+          sendRumour(rumour, state.neighbours)
+          Map.merge(state, %{ :rumour => %{:text => rumour, :count => 1}, :is_transmitting => true})
         true ->
           raise "Invalid rumour"
       end
-
-    IO.inspect(newState.rumour.count)
-
-    cond do
-      newState.rumour.count < 10 ->
-        numNeighbours = tuple_size(newState.neighbours)
-
-        if(numNeighbours == 0) do
-          raise "No neighbours"
-        end
-
-        randomNeighbour = elem(newState.neighbours, :rand.uniform(numNeighbours) - 1)
-        IO.write("Sending rumour to"); IO.inspect(randomNeighbour)
-        receiveRumour(randomNeighbour, newState.rumour.text)
-
-      true ->
-        IO.puts("finish")
-        # Terminate program
+    if(newState.rumour.count == 10) do
+      TWO.gossipParticipantConverge(:orchestrator, state.sw.s)
+      # IO.puts "#{state.index} has converged"
+      put_in(newState.has_converged, true)
+    else 
+      newState
     end
-
-    newState
   end
 
-  def handleReceiveSW(s, w, state) do
-    # IO.write("handleReceiveSW #{s}, #{w}, "); IO.inspect(state)
+  def sendRumour(rumour, neighbours) do
+    numNeighbours = tuple_size(neighbours)
+    if(numNeighbours == 0) do
+      raise "No neighbours"
+    end
+    randomNeighbour = elem(neighbours, :rand.uniform(numNeighbours) - 1)
+    receiveRumour(randomNeighbour, rumour)
+    Process.send_after(self(), :gossip, 100)
+  end
+
+  #Sends message only on receive. Not periodic
+  #Not stopping transmission on covergence
+  def handleReceiveSW(s, w, state) do 
+    # IO.write "handleReceiveSW"; IO.inspect state
     newS = (state.sw.s + s) / 2
     newW = (state.sw.w + w) / 2
     newRatios = FourQueue.push(state.sw.ratios, newS / newW)
-
     newState =
       put_in(state.sw, %{
         :s => newS,
         :w => newW,
         :ratios => newRatios
       })
-
     diff = FourQueue.diff(newState.sw.ratios)
-    IO.puts diff
-    if diff < :math.pow(10, -10) do
-      IO.puts("finish")
+    newState = if ((diff < :math.pow(10, -10))&&(state.has_converged==false)) do
+      IO.puts "#{state.index} has converged"
+      TWO.psParticipantConverge(:orchestrator, state.sw.s)
+      put_in(newState.has_converged, true)
     else
-      numNeighbours = tuple_size(newState.neighbours)
-
-      if(numNeighbours == 0) do
-        raise "No neighbours"
-      end
-
-      randomNeighbour = elem(newState.neighbours, :rand.uniform(numNeighbours) - 1)
-      IO.write("Sending SW to"); IO.inspect(randomNeighbour)
-      receiveSW(randomNeighbour, newState.sw.s, newState.sw.w)
+      newState
     end
+
+    numNeighbours = tuple_size(newState.neighbours)
+    if(numNeighbours == 0) do
+      raise "No neighbours"
+    end
+    randomNeighbour = elem(newState.neighbours, :rand.uniform(numNeighbours) - 1)
+    # IO.write("Sending SW to"); IO.inspect(randomNeighbour)
+    receiveSW(randomNeighbour, newState.sw.s, newState.sw.w)
 
     newState
   end
@@ -125,5 +123,13 @@ defmodule Participant do
         newState = handleReceiveSW(s, w, state)
         {:noreply, newState}
     end
+  end
+
+  def handle_info(:gossip, state) do
+    if(state.has_converged == false) do
+      # IO.puts "#{state.index} is gossiping..."
+      sendRumour(state.rumour.text, state.neighbours)
+    end
+    {:noreply, state}
   end
 end
