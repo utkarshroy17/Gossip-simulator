@@ -35,6 +35,20 @@ defmodule Gen_rand do
       true -> rand
     end
   end
+
+  def gen_rand_list(pid, x, rand_node_list, neighbours) do
+    rand_key = Enum.random(pid)
+    pid = pid -- [rand_key]
+
+    if x > 0 do
+      x = x - 1
+      rand_node_list = rand_node_list ++ [rand_key]
+      neighbours = Map.delete(neighbours, rand_key)
+      gen_rand_list(pid, x, rand_node_list, neighbours)
+    else
+      {neighbours, rand_node_list}
+    end
+  end
 end
 
 defmodule FourQueue do
