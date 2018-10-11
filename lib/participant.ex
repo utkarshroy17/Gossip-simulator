@@ -96,7 +96,7 @@ defmodule Participant do
 
     newState =
       if diff < :math.pow(10, -10) && state.has_converged == false do
-        IO.puts("#{state.index} has converged")
+        # IO.puts("#{state.index} has converged")
         TWO.psParticipantConverge(:orchestrator, state.sw.s)
         put_in(newState.has_converged, true)
       else

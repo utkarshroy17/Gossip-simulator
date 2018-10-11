@@ -101,7 +101,7 @@ defmodule TWO do
   def handleGossipParticipantConverge(_, state) do
     newState = put_in(state.gossip_convergence, state.gossip_convergence + 1)
     num_nodes = map_size(state.participants)
-    IO.puts("Total nodes converged = #{newState.gossip_convergence}/#{num_nodes}")
+    # IO.puts("Total nodes converged = #{newState.gossip_convergence}/#{num_nodes}")
 
     if((newState.gossip_convergence > 0.7 * num_nodes) && state.isFaulty == false) do
       handleFinish(newState)
@@ -113,7 +113,7 @@ defmodule TWO do
   def handlePSParticipantConverge(_, state) do
     newState = put_in(state.ps_convergence, state.ps_convergence + 1)
     num_nodes = map_size(state.participants)
-    IO.puts("Total nodes converged = #{newState.ps_convergence}/#{num_nodes}")
+    # IO.puts("Total nodes converged = #{newState.ps_convergence}/#{num_nodes}")
 
     if(newState.ps_convergence == num_nodes) do
       handleFinish(newState)
