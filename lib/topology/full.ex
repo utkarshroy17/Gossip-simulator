@@ -5,7 +5,7 @@ defmodule Full do
     neighbors = []
 
     set_full = fn j ->
-      neighbors = neighbors ++ Map.get(actor_index, j - 1)
+      neighbors ++ Map.get(actor_index, j - 1)
     end
 
     neighbors = Enum.map(1..x, set_full)

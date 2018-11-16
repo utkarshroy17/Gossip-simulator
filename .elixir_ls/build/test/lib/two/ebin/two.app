@@ -1,0 +1,10 @@
+{application,two,
+             [{applications,[kernel,stdlib,elixir,logger]},
+              {description,"two"},
+              {modules,['Elixir.Failure','Elixir.FourQueue','Elixir.Full',
+                        'Elixir.Gen_rand','Elixir.ImperfectLine',
+                        'Elixir.Line','Elixir.MyList','Elixir.Participant',
+                        'Elixir.RC','Elixir.Random2DGrid','Elixir.Sample',
+                        'Elixir.Sphere','Elixir.TWO','Elixir.ThreeDGrid']},
+              {registered,[]},
+              {vsn,"0.1.0"}]}.

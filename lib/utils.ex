@@ -11,7 +11,7 @@ defmodule MyList do
     _delete_all(tail, el, [head | new_list])
   end
 
-  def _delete_all([], el, new_list) do
+  def _delete_all([], new_list) do
     new_list
   end
 end
